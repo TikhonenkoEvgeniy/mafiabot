@@ -17,26 +17,14 @@ public class Menu {
     public final static String REPEAT_GAME = "Повторить игру";
 
     public final static String MANUAL_ROLES = "Назначить роли вручную";
-    public final static String AUTO_ROLES = "Распределить роли автоматически";
-    public final static String BACK_PLAYER = "\uD83D\uDC48 Вернуться к предыдущему игроку";
+
     public final static String BACK_MENU = "\uD83D\uDC48 Вернуться назад";
     public final static String NEXT_PLAYER = "Ход следующего игрока \uD83D\uDC49";
 
     public final static String CHANGE_TEAM = "Изменить состав команды";
-    public final static String MAKE_COMMAND = "Собрать команду заново";
 
     public final static String CITY_SLEEP = "\uD83D\uDE48\n\n Город засыпает, просыпается мафия";
     public final static String CITY_SUSPECT = "\uD83D\uDD75️\u200D\n\n Город подозревает (голосование)";
-
-    public final static String ALL_CITY_SLEEP = "Весь город засыпает";
-    public final static String ALL_CITY_WAKE_UP = "Просыпается весь город";
-
-    public static String MAFIA_WAKE_UP = "Просыпается только мафия";
-    public static String DON_WAKE_UP = "Просыпается Дон мафии";
-    public static String MANIAC_WAKE_UP = "Просыпается маньяк";
-    public static String DOCTOR_WAKE_UP = "Просыпается доктор";
-    public static String WHORE_WAKE_UP = "Просыпается любовница";
-    public static String COP_WAKE_UP = "Просыпается полицейский";
 
     public static ReplyKeyboard main() {
         return ReplyKeyboardMarkup.builder()
@@ -79,8 +67,7 @@ public class Menu {
                         new KeyboardRow(List.of(new KeyboardButton(Role.MANIAC.getName()),
                                 new KeyboardButton(Role.WHORE.getName()))),
                         new KeyboardRow(List.of(new KeyboardButton(Role.DOCTOR.getName()),
-                                new KeyboardButton(Role.COP.getName()))),
-                        new KeyboardRow(List.of(new KeyboardButton(BACK_PLAYER)))))
+                                new KeyboardButton(Role.COP.getName())))))
                 .build();
     }
 

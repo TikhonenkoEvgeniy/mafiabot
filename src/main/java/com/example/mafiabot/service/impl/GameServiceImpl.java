@@ -16,6 +16,13 @@ public class GameServiceImpl implements GameService {
     private final PlayerService playerService;
     private Map<Long, List<Game>> gamePlay = new HashMap<>();
 
+    /**
+     *
+     * если мафия выбирает любовницу, а доктор лечит любовницу тогда тот кто был выбран любовницей выживает?
+     *
+     *
+     *
+     */
 
     @Override
     public String getWinner(Long id) {
@@ -37,18 +44,14 @@ public class GameServiceImpl implements GameService {
         final String mafiaWin = "Побеждает мафия! \uD83D\uDE08";
 
         if (!hasMafia && !hasManiac && numberOfCivilian >= 1) {
-            playerService.clearAllById(id);
-            startGame(id);
             return civilianWin;
         }
+
         if (!hasMafia && hasManiac && numberOfCivilian <= 2) {
-            playerService.clearAllById(id);
-            startGame(id);
             return maniacWin;
         }
+
         if (numberOfMafia >= numberOfCivilian && !hasManiac) {
-            startGame(id);
-            playerService.clearAllById(id);
             return mafiaWin;
         }
 
@@ -141,21 +144,21 @@ public class GameServiceImpl implements GameService {
         if (game.getChoseMafia() != null) {
 
             // если любовница выбирает ночным клиентом мафию и в игре 1 мафия то мафия промахивается
-            final long numberOfMafia = playerService.getAllAlivePlayers(id).stream()
-                    .filter(p -> !p.getRole().isCivilian()).count();
+            boolean mafiaBlocked = (game.getChoseWhore() != null) &&
+                    (!game.getChoseWhore().getRole().isCivilian()) &&
+                    playerService.getAllAlivePlayers(id).stream()
+                            .filter(p -> !p.getRole().isCivilian()).count() == 1;
 
             // мафия убивает игрока если не блокирована любовницей
-            if (game.getChoseWhore() != null) {
-                if (game.getChoseWhore().getRole().isCivilian() || numberOfMafia > 1) {
-                    if (game.getChoseMafia().getRole().equals(Role.WHORE)) {
-                        deadList.add(game.getChoseWhore());
-                    }
-                    deadList.add(game.getChoseMafia());
+            if (!mafiaBlocked) {
+                if (game.getChoseMafia().getRole().equals(Role.WHORE)) {
+                    deadList.add(game.getChoseWhore());
                 }
+                deadList.add(game.getChoseMafia());
             }
         }
 
-        // маньяк выбирает
+        /*** Маньяк выбирает */
         if (game.getChoseManiac() != null) {
 
             // маньяк убивает если не выбран любовницей или не выбран мафией
@@ -165,7 +168,7 @@ public class GameServiceImpl implements GameService {
             }
         }
 
-        // доктор выбирает
+        /*** Доктор выбирает */
         if (game.getChoseDoctor() != null) {
             if (game.getChoseDoctor().getRole().equals(Role.WHORE) && !doctorSaveWhoreFromManiac) {
                 deadList.remove(game.getChoseDoctor());
@@ -176,11 +179,11 @@ public class GameServiceImpl implements GameService {
             }
         }
 
-        if (!whoreIsDead) {
-            deadList.remove(game.getChoseWhore());
-        }
+//        if (!whoreIsDead) {
+//            deadList.remove(game.getChoseWhore());
+//        }
 
-        // вывод результата
+        /*** Вывод результата */
         if (deadList.isEmpty()) {
             if (doctorSaveWhoreFromManiac) {
                 return goodNews + "\n\nЛюбовница была спасена доктором этой ночью";
@@ -188,7 +191,7 @@ public class GameServiceImpl implements GameService {
             return goodNews;
         }
         else {
-            StringBuilder badNews = new StringBuilder("Этой ночью не просыпаются следующие участники:\n\n");
+            StringBuilder badNews = new StringBuilder("Этой ночью были убиты следующие игроки:\n\n");
             for (Player player : deadList) {
                 player.setAlive(false);
                 badNews.append(player.getName()).append(" (");
@@ -243,7 +246,6 @@ public class GameServiceImpl implements GameService {
         if (game.getChoseDoctor() == null) {
             return true;
         }
-
         return !player.equals(game.getChoseDoctor());
     }
 }

@@ -51,12 +51,15 @@ public class MessageController {
     }
 
     private SendMessage newGame(Update update) {
-        playerService.deleteAllById(update.getMessage().getChatId());
-        gameService.startGame(update.getMessage().getChatId());
-        playerService.setCachePlayer(update.getMessage().getChatId(), null);
-        playerService.setState(update.getMessage().getChatId(), State.INPUT_PLAYERS);
+        final Long chatId = update.getMessage().getChatId();
+
+        playerService.deleteAllById(chatId);
+        playerService.setCachePlayer(chatId, null);
+        playerService.setState(chatId, State.INPUT_PLAYERS);
+        gameService.startGame(chatId);
+
         return SendMessage.builder()
-                .chatId(update.getMessage().getChatId())
+                .chatId(chatId)
                 .text("\uD83D\uDDE3 НОВАЯ ИГРА! \uD83D\uDE80 \n\n" + "Создайте свою команду игроков \uD83D\uDC6B \n\n" +
                         "Перечислите имена игроков, разделяя их знаком пробела, после чего отправьте сообщение и " +
                         "следуйте дальнейшим инструкциям игры.\n--------------------\n" +
@@ -66,31 +69,19 @@ public class MessageController {
     }
 
     private SendMessage backMenu(Update update) {
-        final long id = update.getMessage().getChatId();
+        final Long chatId = update.getMessage().getChatId();
         final String text = "Выберите дальнейшее действие \uD83D\uDC47";
 
-        if (playerService.getState(id).equals(State.VOTE) ||
-                playerService.getState(id).equals(State.WHORE_MOVE)) {
+        if (playerService.getState(chatId).equals(State.VOTE) ||
+                playerService.getState(chatId).equals(State.WHORE_MOVE)) {
 
-            playerService.setState(id, State.GAME);
+            playerService.setState(chatId, State.GAME);
             return SendMessage.builder()
-                    .chatId(id)
+                    .chatId(chatId)
                     .text(text)
                     .replyMarkup(Menu.gameMenu())
                     .build();
         }
-
-//        if (playerService.getState(id).equals(State.WHORE_MOVE)) {
-//            playerService.setState(id, State.GAME);
-//
-//            return SendMessage.builder()
-//                    .chatId(id)
-//                    .text(text)
-//                    .replyMarkup(Menu.gameMenu())
-//                    .build();
-//        }
-
-
 
         return SendMessage.builder()
                 .chatId(update.getMessage().getChatId())
@@ -99,9 +90,11 @@ public class MessageController {
     }
 
     private SendMessage changeTeam(Update update) {
-        playerService.setState(update.getMessage().getChatId(), State.INPUT_PLAYERS);
+        final Long chatId = update.getMessage().getChatId();
+        playerService.setState(chatId, State.INPUT_PLAYERS);
+
         return SendMessage.builder()
-                .chatId(update.getMessage().getChatId())
+                .chatId(chatId)
                 .text("Перечислите имена игроков, разделяя их знаком пробела, после чего отправьте сообщение и " +
                         "следуйте дальнейшим инструкциям игры.\n--------------------\n" +
                         "Например, Женя Оля Маша Вася Юля")
@@ -110,8 +103,12 @@ public class MessageController {
     }
 
     private SendMessage repeatGame(Update update) {
-        playerService.clearAllById(update.getMessage().getChatId());
-        List<Player> players = playerService.getAllAlivePlayers(update.getMessage().getChatId());
+        final Long chatId = update.getMessage().getChatId();
+
+        playerService.clearAllById(chatId);
+        gameService.startGame(chatId);
+
+        List<Player> players = playerService.getAllAlivePlayers(chatId);
 
         if (players != null) {
             List<String> participants = players
@@ -125,7 +122,7 @@ public class MessageController {
             }
 
             return SendMessage.builder()
-                    .chatId(update.getMessage().getChatId())
+                    .chatId(chatId)
                     .text("Список игроков (" + participants.size() + "): \uD83D\uDC47\n--------------------\n" +
                             stringBuilder + "--------------------\n" +
                             "если меню скрыто, то нажмите на значок виртуальной клавиатуры " +
@@ -135,7 +132,7 @@ public class MessageController {
         }
 
         return SendMessage.builder()
-                .chatId(update.getMessage().getChatId())
+                .chatId(chatId)
                 .text("Игроки не найдены, возможно это ошибка игры, пожалуйста начните новую игру \uD83D\uDE4F" +
                         "\n--------------------\n")
                 .replyMarkup(Menu.main())
@@ -143,38 +140,39 @@ public class MessageController {
     }
 
     private SendMessage citySuspect(Update update) {
-        final Message message = update.getMessage();
-        playerService.setState(message.getChatId(), State.VOTE);
+        final Long chatId = update.getMessage().getChatId();
+        playerService.setState(chatId, State.VOTE);
+
         return SendMessage.builder()
-                .chatId(message.getChatId())
+                .chatId(chatId)
                 .text("Город ищет мафию \uD83E\uDD14\n\n" + "Каждый игрок должен отдать только один свой голос " +
                         "за того, кто по его мнению не является мирным жителем.\n" +
                         "Игрок с наибольшим количеством голосов покидает игру \uD83D\uDC4B\n\n" +
                         "Выберите в меню игрока против которого проголосовала команда")
-                .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(message.getChatId())))
+                .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId)))
                 .build();
     }
 
     private SendMessage citySleep(Update update) {
-        final Message message = update.getMessage();
-        playerService.setState(message.getChatId(), State.WHORE_MOVE);
+        final Long chatId = update.getMessage().getChatId();
+        playerService.setState(chatId, State.WHORE_MOVE);
 
         final String mainText = "Внимание всем игрокам:\nВесь город засыпает \uD83D\uDE34\n\n" +
                 "Просыпается только любовница и показывает на того, кого она заберет к себе " +
                 "и проведет с ним эту ночь \uD83E\uDD70\n\n";
 
-        if (playerService.checkHasRole(message.getChatId(), Role.WHORE)) {
+        if (playerService.checkHasRole(chatId, Role.WHORE)) {
 
             return SendMessage.builder()
-                    .chatId(message.getChatId())
+                    .chatId(chatId)
                     .text(mainText)
-                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(message.getChatId(), Role.WHORE)))
+                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId, Role.WHORE)))
                     .build();
         }
         else {
 
             return SendMessage.builder()
-                    .chatId(message.getChatId())
+                    .chatId(chatId)
                     .text(mainText + "Любовницы нет в игре\nМотай дальше ⬇️")
                     .replyMarkup(Menu.getSkipKeyboard())
                     .build();
@@ -182,13 +180,14 @@ public class MessageController {
     }
 
     private SendMessage manualRoles(Update update) {
-        Player player = playerService.getPlayerEmptyRole(update.getMessage().getChatId());
-        if (player == null) {
+        final Long chatId = update.getMessage().getChatId();
+        Player player = playerService.getPlayerEmptyRole(chatId);
 
-            // todo: все роли заполнены
+        if (player == null) {
+            playerService.setState(chatId, State.GAME);
 
             return SendMessage.builder()
-                    .chatId(update.getMessage().getChatId())
+                    .chatId(chatId)
                     .text("Все роли назначены! ✌️\n\nИгрокам необходимо познакомиться для того, чтобы понять, " +
                             "кто из игроков может представлять опасность ночью.\n\nПридумайте тему для обсуждения, " +
                             "после обсуждения город засыпает\nВы можете проголосовать за подозрительного игрока днем.")
@@ -197,19 +196,19 @@ public class MessageController {
 
         }
 
-        playerService.setCachePlayer(update.getMessage().getChatId(), player);
+        playerService.setCachePlayer(chatId, player);
 
         return SendMessage.builder()
-                .chatId(update.getMessage().getChatId())
+                .chatId(chatId)
                 .text("Выберите роль для игрока:\n" + player.getName())
                 .replyMarkup(Menu.getRolesMenu())
                 .build();
     }
 
     private SendMessage setCommand(Update update) {
+        final Long chatId = update.getMessage().getChatId();
         List<String> participants = Arrays.stream(update.getMessage().getText().trim().split(" "))
                 .distinct().filter(p -> !p.equals("")).toList();
-
 
         StringBuilder stringBuilder = new StringBuilder();
         List<Player> players = new ArrayList<>();
@@ -221,10 +220,10 @@ public class MessageController {
             stringBuilder.append(s).append("\n");
         }
 
-        playerService.savePlayers(update.getMessage().getChatId(), players);
+        playerService.savePlayers(chatId, players);
 
         return SendMessage.builder()
-                .chatId(update.getMessage().getChatId())
+                .chatId(chatId)
                 .text("Список игроков (" + players.size() + "): \uD83D\uDC47\n--------------------\n" +
                         stringBuilder + "--------------------\n" +
                         "если меню скрыто, то нажмите на значок виртуальной клавиатуры " +
@@ -234,12 +233,14 @@ public class MessageController {
     }
 
     private SendMessage cityVote(Update update) {
-        final Message message = update.getMessage();
+        final Long chatId = update.getMessage().getChatId();
+        final String chatText = update.getMessage().getText();
+
         playerService.setState(update.getMessage().getChatId(), State.GAME);
 
-        Player player = playerService.getAllAlivePlayers(message.getChatId())
-                .stream().filter(p -> p.getName().equals(message.getText())).findFirst()
-                .orElseThrow(() -> new RuntimeException("Player '" + message.getText() + "' was not found"));
+        Player player = playerService.getAllAlivePlayers(chatId)
+                .stream().filter(p -> p.getName().equals(chatText)).findFirst()
+                .orElseThrow(() -> new RuntimeException("Player '" + chatText + "' was not found"));
 
         StringBuilder stringBuilder = new StringBuilder("Команда выбрала игрока:\n" + player.getName() + "\n\n");
 
@@ -259,18 +260,18 @@ public class MessageController {
             }
         }
 
-        playerService.resetBlockAll(message.getChatId());
+        playerService.resetBlockAll(chatId);
         ReplyKeyboard replyKeyboard = Menu.gameMenu();
 
-        if (!gameService.getWinner(message.getChatId()).equals("")) {
+        if (!gameService.getWinner(chatId).equals("")) {
             stringBuilder.append("\n\n--------------------\n");
-            stringBuilder.append(gameService.getWinner(message.getChatId()));
+            stringBuilder.append(gameService.getWinner(chatId));
             replyKeyboard = Menu.main();
-            playerService.setState(message.getChatId(), State.GAME);
+            playerService.setState(chatId, State.GAME);
         }
 
         return SendMessage.builder()
-                .chatId(message.getChatId())
+                .chatId(chatId)
                 .text(stringBuilder.toString())
                 .replyMarkup(replyKeyboard)
                 .build();
@@ -309,25 +310,25 @@ public class MessageController {
     }
 
     private SendMessage setRole(Role role, Update update) {
-        Player player = playerService.getCachePlayer(update.getMessage().getChatId());
+        final Long chatId = update.getMessage().getChatId();
+        Player player = playerService.getCachePlayer(chatId);
+
         player.setRole(role);
-        playerService.updatePlayers(update.getMessage().getChatId(), player);
+        playerService.updatePlayers(chatId, player);
+        playerService.setCachePlayer(chatId, playerService.getPlayerEmptyRole(chatId));
 
-        playerService.setCachePlayer(update.getMessage().getChatId(),
-                playerService.getPlayerEmptyRole(update.getMessage().getChatId()));
-
-        if (playerService.getCachePlayer(update.getMessage().getChatId()) != null) {
+        if (playerService.getCachePlayer(chatId) != null) {
             return SendMessage.builder()
-                    .chatId(update.getMessage().getChatId())
+                    .chatId(chatId)
                     .text("Игрок " + player.getName() + " получил роль: \n" + role.getName() + "\n\n" +
                             "Выберите роль для игрока:\n" +
-                            playerService.getCachePlayer(update.getMessage().getChatId()).getName())
+                            playerService.getCachePlayer(chatId).getName())
                     .replyMarkup(Menu.getRolesMenu())
                     .build();
         }
 
         return SendMessage.builder()
-                .chatId(update.getMessage().getChatId())
+                .chatId(chatId)
                 .text("Игрок " + player.getName() + " получил роль: \n" + role.getName() + "\n\n" +
                         "--------------------\n" +
                         "Все роли назначены! ✌️\n\nИгрокам необходимо познакомиться для того, чтобы понять, " +
@@ -342,64 +343,64 @@ public class MessageController {
      */
 
     private SendMessage chooseOfWhore(Update update) {
-
+        final Long chatId = update.getMessage().getChatId();
+        final String chatText = update.getMessage().getText();
         final String text = "\n--------------------\n\n" +
                 "Просыпается мафия и выбирает кто этой ночью будет убит \uD83D\uDE35\n";
 
-        if (update.getMessage().getText().equals(NEXT_PLAYER)) {
-            playerService.setState(update.getMessage().getChatId(), State.MAFIA_MOVE);
-            gameService.choseWhore(update.getMessage().getChatId(), null);
+        if (chatText.equals(NEXT_PLAYER)) {
+            playerService.setState(chatId, State.MAFIA_MOVE);
+            gameService.choseWhore(chatId, null);
             return SendMessage.builder()
-                    .chatId(update.getMessage().getChatId())
+                    .chatId(chatId)
                     .text("Любовница пропустила свой ход" + text)
-                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(update.getMessage().getChatId())))
+                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId)))
                     .build();
         }
 
-        Player player = playerService.getPlayerByName(update.getMessage().getChatId(), update.getMessage().getText());
+        Player player = playerService.getPlayerByName(chatId, chatText);
 
-        if (gameService.checkChoiceOfWhore(update.getMessage().getChatId(), player)) {
+        if (gameService.checkChoiceOfWhore(chatId, player)) {
 
-            gameService.choseWhore(update.getMessage().getChatId(), player);
-            playerService.setState(update.getMessage().getChatId(), State.MAFIA_MOVE);
+            gameService.choseWhore(chatId, player);
+            playerService.setState(chatId, State.MAFIA_MOVE);
 
             return SendMessage.builder()
-                    .chatId(update.getMessage().getChatId())
+                    .chatId(chatId)
                     .text("Любовница сделала свой выбор" + text)
-                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(update.getMessage().getChatId())))
+                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId)))
                     .build();
         } else {
             return SendMessage.builder()
-                    .chatId(update.getMessage().getChatId())
+                    .chatId(chatId)
                     .text("Любовница не может выбрать этого игрока \uD83D\uDE45\u200D♂️\nНужно выбрать другого игрока")
-                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(
-                            update.getMessage().getChatId(), Role.WHORE)))
+                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId, Role.WHORE)))
                     .build();
         }
     }
 
     private SendMessage chooseOfMafia(Update update) {
-        final Message message = update.getMessage();
+        final Long chatId = update.getMessage().getChatId();
         final String text = "Мафия сделала свой выбор\n--------------------\n\n" +
                 "Просыпается Дон мафии и пытается вычислить полицейского \uD83D\uDD2E\n\n";
 
-        Player player = playerService.getPlayerByName(message.getChatId(), message.getText());
+        Player player = playerService.getPlayerByName(chatId, update.getMessage().getText());
 
-        gameService.choseMafia(message.getChatId(), player);
-        playerService.setState(message.getChatId(), State.DON_MOVE);
+        gameService.choseMafia(chatId, player);
+        playerService.setState(chatId, State.DON_MOVE);
 
-        if (playerService.checkHasRole(message.getChatId(), Role.DON)) {
+        if (playerService.checkHasRole(chatId, Role.DON)) {
 
             return SendMessage.builder()
                     .chatId(update.getMessage().getChatId())
                     .text(text)
-                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(message.getChatId(), Role.DON)))
+                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId, Role.DON)))
                     .build();
         }
         else {
 
             return SendMessage.builder()
-                    .chatId(message.getChatId())
+                    .chatId(chatId)
                     .text(text + "Дона мафии нет в игре\nМотай дальше ⬇")
                     .replyMarkup(Menu.getSkipKeyboard())
                     .build();
@@ -407,20 +408,21 @@ public class MessageController {
     }
 
     private SendMessage chooseOfDon(Update update) {
-        final Message message = update.getMessage();
-        playerService.setState(message.getChatId(), State.MANIAC_MOVE);
+        final Long chatId = update.getMessage().getChatId();
+        final String chatText = update.getMessage().getText();
+        playerService.setState(chatId, State.MANIAC_MOVE);
 
-        if (message.getText().equals(NEXT_PLAYER)) {
-            if (playerService.checkHasRole(message.getChatId(), Role.MANIAC)) {
+        if (chatText.equals(NEXT_PLAYER)) {
+            if (playerService.checkHasRole(chatId, Role.MANIAC)) {
                 return SendMessage.builder()
-                        .chatId(message.getChatId())
+                        .chatId(chatId)
                         .text("Дон мафии пропустил свой ход\n--------------------\n\n" +
                                 "Просыпается маньяк и выбирает себе ночную жертву \uD83D\uDE08\n")
-                        .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(message.getChatId(), Role.MANIAC)))
+                        .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId, Role.MANIAC)))
                         .build();
             } else {
                 return SendMessage.builder()
-                        .chatId(message.getChatId())
+                        .chatId(chatId)
                         .text("Дон мафии пропустил свой ход\n--------------------\n\n" +
                                 "Просыпается маньяк и выбирает себе ночную жертву \uD83D\uDE08\n\n" +
                                 "Маньяка в игре нет\nМотай дальше ⬇")
@@ -429,20 +431,20 @@ public class MessageController {
             }
         } else {
 
-            final Player player = playerService.getPlayerByName(message.getChatId(), message.getText());
+            final Player player = playerService.getPlayerByName(chatId, chatText);
             boolean isCop = player.getRole().equals(Role.COP);
             final String answer = isCop ? "\uD83D\uDC4D" : "\uD83D\uDC4E";
 
-            if (playerService.checkHasRole(message.getChatId(), Role.MANIAC)) {
+            if (playerService.checkHasRole(chatId, Role.MANIAC)) {
                 return SendMessage.builder()
-                        .chatId(message.getChatId())
+                        .chatId(chatId)
                         .text("Дон мафии проверил игрока и получил ответ " + answer + "\n--------------------\n\n" +
                                 "Просыпается маньяк и выбирает себе ночную жертву \uD83D\uDE08\n")
-                        .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(message.getChatId(), Role.MANIAC)))
+                        .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId, Role.MANIAC)))
                         .build();
             } else {
                 return SendMessage.builder()
-                        .chatId(message.getChatId())
+                        .chatId(chatId)
                         .text("Дон мафии проверил игрока и получил ответ " + answer + "\n--------------------\n\n" +
                                 "Просыпается маньяк и выбирает себе ночную жертву \uD83D\uDE08\n\n" +
                                 "Маньяка в игре нет\nМотай дальше ⬇")
