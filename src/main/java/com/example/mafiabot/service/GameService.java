@@ -1,6 +1,5 @@
 package com.example.mafiabot.service;
 
-import com.example.mafiabot.enums.Role;
 import com.example.mafiabot.model.Player;
 
 public interface GameService {

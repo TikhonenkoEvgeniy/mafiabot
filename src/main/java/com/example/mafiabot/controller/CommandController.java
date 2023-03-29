@@ -2,19 +2,22 @@ package com.example.mafiabot.controller;
 
 import com.example.mafiabot.service.PlayerService;
 import com.example.mafiabot.util.Menu;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 
 @Component
-@RequiredArgsConstructor
 public class CommandController {
     private final PlayerService playerService;
     public static final String START = "/start";
     public static final String STOP = "/stop";
     public static final String HELP = "/help";
+
+    public CommandController(@Autowired PlayerService playerService) {
+        this.playerService = playerService;
+    }
 
     public SendMessage send(Update update) {
         return switch (update.getMessage().getText().toLowerCase()) {

@@ -5,14 +5,14 @@ import com.example.mafiabot.enums.State;
 import com.example.mafiabot.model.Player;
 import com.example.mafiabot.service.PlayerService;
 import jakarta.ws.rs.NotFoundException;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Service
+@Component
 public class PlayerServiceImpl implements PlayerService {
     private Map<Long, List<Player>> allPlayers = new HashMap<>();
     private Map<Long, Player> cachePlayer = new HashMap<>();

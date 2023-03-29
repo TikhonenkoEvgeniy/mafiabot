@@ -1,18 +1,25 @@
 package com.example.mafiabot.controller;
 
 import com.example.mafiabot.config.BotConfig;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Component
-@RequiredArgsConstructor
 public class MainController extends TelegramLongPollingBot {
     private final BotConfig botConfig;
     private final CommandController commandController;
     private final MessageController messageController;
+
+    public MainController(@Autowired BotConfig botConfig,
+                          @Autowired CommandController commandController,
+                          @Autowired MessageController messageController) {
+        this.botConfig = botConfig;
+        this.commandController = commandController;
+        this.messageController = messageController;
+    }
 
     @Override
     public void onUpdateReceived(Update update) {

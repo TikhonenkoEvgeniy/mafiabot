@@ -6,7 +6,7 @@ import com.example.mafiabot.model.Player;
 import com.example.mafiabot.service.GameService;
 import com.example.mafiabot.service.PlayerService;
 import com.example.mafiabot.util.Menu;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -22,10 +22,15 @@ import static com.example.mafiabot.Str.*;
 import static com.example.mafiabot.util.Menu.*;
 
 @Component
-@RequiredArgsConstructor
 public class MessageController {
     private final PlayerService playerService;
     private final GameService gameService;
+
+    public MessageController(@Autowired PlayerService playerService,
+                             @Autowired GameService gameService) {
+        this.playerService = playerService;
+        this.gameService = gameService;
+    }
 
     public SendMessage send(Update update) {
         return switch (update.getMessage().getText()) {

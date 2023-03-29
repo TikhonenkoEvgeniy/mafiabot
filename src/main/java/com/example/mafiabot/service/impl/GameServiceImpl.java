@@ -5,16 +5,19 @@ import com.example.mafiabot.model.Game;
 import com.example.mafiabot.model.Player;
 import com.example.mafiabot.service.GameService;
 import com.example.mafiabot.service.PlayerService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 
-@Service
-@RequiredArgsConstructor
+@Component
 public class GameServiceImpl implements GameService {
     private final PlayerService playerService;
     private Map<Long, List<Game>> gamePlay = new HashMap<>();
+
+    public GameServiceImpl(@Autowired PlayerService playerService) {
+        this.playerService = playerService;
+    }
 
     /**
      *
