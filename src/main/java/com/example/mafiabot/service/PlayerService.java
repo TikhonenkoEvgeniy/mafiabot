@@ -7,7 +7,7 @@ import com.example.mafiabot.model.Player;
 import java.util.List;
 
 public interface PlayerService {
-    List<Player> setRolesAuto(Long id);
+    boolean setRolesAuto(Long id);
     Player getPlayerEmptyRole(Long id);
     boolean checkRoleIsBlockedByWhore(Long id, Role role);
     boolean checkPlayerByCop(Long id, Player player);
@@ -24,5 +24,6 @@ public interface PlayerService {
     State getState(Long id);
     void resetBlockAll(Long id);
     Player getPlayerByName(Long id, String name);
+    boolean isMafiaWasBlockedByWhore(Long id);
 
 }

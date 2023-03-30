@@ -4,6 +4,7 @@ public enum State {
     GAME,
     INPUT_PLAYERS,
     VOTE,
+    SHOW_ROLES,
 
     WHORE_MOVE,
     MAFIA_MOVE,

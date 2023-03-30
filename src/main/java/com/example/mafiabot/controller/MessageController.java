@@ -9,8 +9,13 @@ import com.example.mafiabot.util.Menu;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
+import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 
@@ -26,17 +31,22 @@ public class MessageController {
     private final PlayerService playerService;
     private final GameService gameService;
 
+    private static final String textAllRolesDone = "Все роли назначены! ✌️\n\nИгрокам необходимо познакомиться для " +
+            "того, чтобы понять, кто из игроков может представлять опасность ночью.\n\nПридумайте тему для " +
+            "обсуждения, после обсуждения город засыпает\nВы можете проголосовать за подозрительного игрока днем.";
+
     public MessageController(@Autowired PlayerService playerService,
                              @Autowired GameService gameService) {
         this.playerService = playerService;
         this.gameService = gameService;
     }
 
-    public SendMessage send(Update update) {
+    public Object send(Update update) {
         return switch (update.getMessage().getText()) {
             case START_GAME -> newGame(update);
             case REPEAT_GAME -> repeatGame(update);
             case MANUAL_ROLES -> manualRoles(update);
+            case AUTO_ROLES -> autoRoles(update);
             case CHANGE_TEAM -> changeTeam(update);
             case BACK_MENU -> backMenu(update);
 
@@ -55,7 +65,7 @@ public class MessageController {
         };
     }
 
-    private SendMessage newGame(Update update) {
+    private Object newGame(Update update) {
         final Long chatId = update.getMessage().getChatId();
 
         playerService.deleteAllById(chatId);
@@ -73,7 +83,7 @@ public class MessageController {
                 .build();
     }
 
-    private SendMessage backMenu(Update update) {
+    private Object backMenu(Update update) {
         final Long chatId = update.getMessage().getChatId();
         final String text = "Выберите дальнейшее действие \uD83D\uDC47";
 
@@ -94,7 +104,7 @@ public class MessageController {
                 .build();
     }
 
-    private SendMessage changeTeam(Update update) {
+    private Object changeTeam(Update update) {
         final Long chatId = update.getMessage().getChatId();
         playerService.setState(chatId, State.INPUT_PLAYERS);
 
@@ -107,7 +117,7 @@ public class MessageController {
                 .build();
     }
 
-    private SendMessage repeatGame(Update update) {
+    private Object repeatGame(Update update) {
         final Long chatId = update.getMessage().getChatId();
 
         playerService.clearAllById(chatId);
@@ -144,7 +154,7 @@ public class MessageController {
                 .build();
     }
 
-    private SendMessage citySuspect(Update update) {
+    private Object citySuspect(Update update) {
         final Long chatId = update.getMessage().getChatId();
         playerService.setState(chatId, State.VOTE);
 
@@ -158,7 +168,7 @@ public class MessageController {
                 .build();
     }
 
-    private SendMessage citySleep(Update update) {
+    private Object citySleep(Update update) {
         final Long chatId = update.getMessage().getChatId();
         playerService.setState(chatId, State.WHORE_MOVE);
 
@@ -184,7 +194,59 @@ public class MessageController {
         }
     }
 
-    private SendMessage manualRoles(Update update) {
+    private Object autoRoles(Update update) {
+        final Long chatId = update.getMessage().getChatId();
+
+        if (playerService.setRolesAuto(chatId)) {
+            playerService.setState(chatId, State.SHOW_ROLES);
+            return SendMessage.builder()
+                    .chatId(chatId)
+                    .text(textAllRolesDone)
+                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId)))
+                    .build();
+        }
+
+        return SendMessage.builder()
+                .chatId(chatId)
+                .text("Не удалось назначить роли автоматически \uD83D\uDE33")
+                .replyMarkup(Menu.newGame())
+                .build();
+    }
+
+    private Object showRole(Update update) {
+        final Long chatId = update.getMessage().getChatId();
+        final String chatText = update.getMessage().getText();
+
+        if (chatText.equals(BACK_MENU)) {
+           gameService.setMessageId(chatId, null);
+            playerService.setState(chatId, State.GAME);
+            return SendMessage.builder()
+                    .chatId(chatId)
+                    .text(textAllRolesDone)
+                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId)))
+                    .build();
+
+        }
+        else {
+            final Player player = playerService.getPlayerByName(chatId, chatText);
+
+
+//            return SendPhoto.builder()
+//                    .chatId(chatId)
+//                    .photo(new InputFile("src/main/java/com/example/mafiabot/images/civilian.png"))
+//                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId)))
+//                    .build();
+
+
+            return SendMessage.builder()
+                    .chatId(chatId)
+                    .text(player.getRole().getName())
+                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId)))
+                    .build();
+        }
+    }
+
+    private Object manualRoles(Update update) {
         final Long chatId = update.getMessage().getChatId();
         Player player = playerService.getPlayerEmptyRole(chatId);
 
@@ -193,9 +255,7 @@ public class MessageController {
 
             return SendMessage.builder()
                     .chatId(chatId)
-                    .text("Все роли назначены! ✌️\n\nИгрокам необходимо познакомиться для того, чтобы понять, " +
-                            "кто из игроков может представлять опасность ночью.\n\nПридумайте тему для обсуждения, " +
-                            "после обсуждения город засыпает\nВы можете проголосовать за подозрительного игрока днем.")
+                    .text(textAllRolesDone)
                     .replyMarkup(Menu.gameMenu())
                     .build();
 
@@ -210,7 +270,7 @@ public class MessageController {
                 .build();
     }
 
-    private SendMessage setCommand(Update update) {
+    private Object setCommand(Update update) {
         final Long chatId = update.getMessage().getChatId();
         List<String> participants = Arrays.stream(update.getMessage().getText().trim().split(" "))
                 .distinct().filter(p -> !p.equals("")).toList();
@@ -237,7 +297,7 @@ public class MessageController {
                 .build();
     }
 
-    private SendMessage cityVote(Update update) {
+    private Object cityVote(Update update) {
         final Long chatId = update.getMessage().getChatId();
         final String chatText = update.getMessage().getText();
 
@@ -286,35 +346,35 @@ public class MessageController {
      * ================================== Установка ролей ==================================
      */
 
-    private SendMessage setCivilianRole(Update update) {
+    private Object setCivilianRole(Update update) {
         return setRole(Role.CIVILIAN, update);
     }
 
-    private SendMessage setMafiaRole(Update update) {
+    private Object setMafiaRole(Update update) {
         return setRole(Role.MAFIA, update);
     }
 
-    private SendMessage setDonRole(Update update) {
+    private Object setDonRole(Update update) {
         return setRole(Role.DON, update);
     }
 
-    private SendMessage setDoctorRole(Update update) {
+    private Object setDoctorRole(Update update) {
         return setRole(Role.DOCTOR, update);
     }
 
-    private SendMessage setWhoreRole(Update update) {
+    private Object setWhoreRole(Update update) {
         return setRole(Role.WHORE, update);
     }
 
-    private SendMessage setCopRole(Update update) {
+    private Object setCopRole(Update update) {
         return setRole(Role.COP, update);
     }
 
-    private SendMessage setManiacRole(Update update) {
+    private Object setManiacRole(Update update) {
         return setRole(Role.MANIAC, update);
     }
 
-    private SendMessage setRole(Role role, Update update) {
+    private Object setRole(Role role, Update update) {
         final Long chatId = update.getMessage().getChatId();
         Player player = playerService.getCachePlayer(chatId);
 
@@ -335,10 +395,7 @@ public class MessageController {
         return SendMessage.builder()
                 .chatId(chatId)
                 .text("Игрок " + player.getName() + " получил роль: \n" + role.getName() + "\n\n" +
-                        "--------------------\n" +
-                        "Все роли назначены! ✌️\n\nИгрокам необходимо познакомиться для того, чтобы понять, " +
-                        "кто из игроков может представлять опасность ночью.\n\nПридумайте тему для обсуждения, " +
-                        "после обсуждения город засыпает или вы можете проголосовать за подозрительного игрока днем.")
+                        "--------------------\n" + textAllRolesDone)
                 .replyMarkup(Menu.gameMenu())
                 .build();
     }
@@ -347,7 +404,7 @@ public class MessageController {
      * =============================== Ночные выборы игроков ===============================
      */
 
-    private SendMessage chooseOfWhore(Update update) {
+    private Object chooseOfWhore(Update update) {
         final Long chatId = update.getMessage().getChatId();
         final String chatText = update.getMessage().getText();
         final String text = "\n--------------------\n\n" +
@@ -384,10 +441,10 @@ public class MessageController {
         }
     }
 
-    private SendMessage chooseOfMafia(Update update) {
+    private Object chooseOfMafia(Update update) {
         final Long chatId = update.getMessage().getChatId();
         final String text = "Мафия сделала свой выбор\n--------------------\n\n" +
-                "Просыпается Дон мафии и пытается вычислить полицейского \uD83D\uDD2E\n\n";
+                "Просыпается Дон мафии и пытается вычислить шерифа \uD83D\uDD2E\n\n";
 
         Player player = playerService.getPlayerByName(chatId, update.getMessage().getText());
 
@@ -412,7 +469,7 @@ public class MessageController {
         }
     }
 
-    private SendMessage chooseOfDon(Update update) {
+    private Object chooseOfDon(Update update) {
         final Long chatId = update.getMessage().getChatId();
         final String chatText = update.getMessage().getText();
         playerService.setState(chatId, State.MANIAC_MOVE);
@@ -459,7 +516,7 @@ public class MessageController {
         }
     }
 
-    private SendMessage chooseOfManiac(Update update) {
+    private Object chooseOfManiac(Update update) {
         final Message message = update.getMessage();
         final String answer = "\n--------------------\n\n" +
                 "Просыпается доктор и выбирает кого он будет лечить \uD83D\uDE91\n\n";
@@ -475,7 +532,7 @@ public class MessageController {
         }
     }
 
-    private SendMessage getSendMessageOfManiac(Message message, String answer) {
+    private Object getSendMessageOfManiac(Message message, String answer) {
         if (playerService.checkHasRole(message.getChatId(), Role.DOCTOR)) {
             return SendMessage.builder()
                     .chatId(message.getChatId())
@@ -492,10 +549,10 @@ public class MessageController {
         }
     }
 
-    private SendMessage chooseOfDoctor(Update update) {
+    private Object chooseOfDoctor(Update update) {
         final Message message = update.getMessage();
         final String answer = "\n--------------------\n\n" +
-                "Просыпается полицейский и выбирает кого проверить \uD83C\uDFAF\n\n";
+                "Просыпается шериф и выбирает кого проверить \uD83C\uDFAF\n\n";
         playerService.setState(message.getChatId(), State.COP_MOVE);
 
         if (message.getText().equals(NEXT_PLAYER)) {
@@ -517,7 +574,7 @@ public class MessageController {
                 .build();
     }
 
-    private SendMessage getSendMessageDoctor(Message message, String answer) {
+    private Object getSendMessageDoctor(Message message, String answer) {
         if (playerService.checkHasRole(message.getChatId(), Role.COP)) {
             return SendMessage.builder()
                     .chatId(message.getChatId())
@@ -528,13 +585,13 @@ public class MessageController {
         else {
             return SendMessage.builder()
                     .chatId(message.getChatId())
-                    .text(answer + "Полицейского в игре нет\nМотай дальше ⬇")
+                    .text(answer + "Шерифа в игре нет\nМотай дальше ⬇")
                     .replyMarkup(Menu.getSkipKeyboard())
                     .build();
         }
     }
 
-    private SendMessage chooseOfCop(Update update) {
+    private Object chooseOfCop(Update update) {
         final Message message = update.getMessage();
         final String winnerText = gameService.getWinner(message.getChatId());
         String text = "\n--------------------\n\n" +
@@ -552,13 +609,11 @@ public class MessageController {
         if (message.getText().equals(NEXT_PLAYER)) {
             return SendMessage.builder()
                     .chatId(message.getChatId())
-                    .text("Полицейский пропустил свой ход" + text)
+                    .text("Шериф пропустил свой ход" + text)
                     .replyMarkup(replyKeyboard)
                     .build();
         }
         else {
-
-
 
             final String answer = playerService.checkRoleIsBlockedByWhore(message.getChatId(), Role.COP) ?
                             "\uD83D\uDE45\u200D♂️" :
@@ -568,7 +623,7 @@ public class MessageController {
 
             return SendMessage.builder()
                     .chatId(message.getChatId())
-                    .text("Полицейский получил ответ: " + answer + text)
+                    .text("Шериф получил ответ: " + answer + text)
                     .replyMarkup(replyKeyboard)
                     .build();
         }
@@ -578,11 +633,12 @@ public class MessageController {
      * ======================================================================================
      */
 
-    private SendMessage notMenu(Update update) {
+    private Object notMenu(Update update) {
         return switch (playerService.getState(update.getMessage().getChatId())) {
             case GAME -> new SendMessage();
             case INPUT_PLAYERS -> setCommand(update);
             case VOTE -> cityVote(update);
+            case SHOW_ROLES -> showRole(update);
             case WHORE_MOVE -> chooseOfWhore(update);
             case MAFIA_MOVE -> chooseOfMafia(update);
             case DON_MOVE -> chooseOfDon(update);

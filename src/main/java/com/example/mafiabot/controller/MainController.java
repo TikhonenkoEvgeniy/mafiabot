@@ -4,6 +4,9 @@ import com.example.mafiabot.config.BotConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -28,7 +31,16 @@ public class MainController extends TelegramLongPollingBot {
                 if (update.getMessage().isCommand()) {
                     execute(commandController.send(update));
                 } else {
-                    execute(messageController.send(update));
+                    Object object = messageController.send(update);
+                    if (object instanceof SendMessage) {
+                        execute((SendMessage) object);
+                    }
+                    if (object instanceof SendPhoto) {
+                        execute((SendPhoto) object);
+                    }
+                    if (object instanceof EditMessageMedia) {
+                        execute((EditMessageMedia) object);
+                    }
                 }
             } catch (TelegramApiException exception) {
                 exception.printStackTrace();

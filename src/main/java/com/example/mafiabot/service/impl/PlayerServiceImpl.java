@@ -7,9 +7,7 @@ import com.example.mafiabot.service.PlayerService;
 import jakarta.ws.rs.NotFoundException;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -19,9 +17,72 @@ public class PlayerServiceImpl implements PlayerService {
     private Map<Long, State> stateUser = new HashMap<>();
 
     @Override
-    public List<Player> setRolesAuto(Long id) {
+    public boolean setRolesAuto(Long id) {
+        final int numberOfPlayers = allPlayers.get(id).size();
+        List<Role> roles = new ArrayList<>();
 
-        return null;
+        if (numberOfPlayers < 6 && numberOfPlayers >=4) {
+            roles.add(Role.MAFIA);
+            roles.add(Role.WHORE);
+            roles.add(Role.DOCTOR);
+
+            for (int i = 0; i < numberOfPlayers - 3; i++) {
+                roles.add(Role.CIVILIAN);
+            }
+
+        } else if (numberOfPlayers <= 8) {
+            roles.add(Role.MAFIA);
+            roles.add(Role.MAFIA);
+            roles.add(Role.WHORE);
+            roles.add(Role.DOCTOR);
+            roles.add(Role.COP);
+
+            for (int i = 0; i < numberOfPlayers - 5; i++) {
+                roles.add(Role.CIVILIAN);
+            }
+            
+        } else if (numberOfPlayers <= 10) {
+            //todo от 9 до 10 игроков
+            roles.add(Role.MAFIA);
+            roles.add(Role.MAFIA);
+            roles.add(getRandomRole(Role.DON, Role.MANIAC));
+            roles.add(Role.WHORE);
+            roles.add(Role.DOCTOR);
+            roles.add(Role.COP);
+
+            for (int i = 0; i < numberOfPlayers - 6; i++) {
+                roles.add(Role.CIVILIAN);
+            }
+            
+        } else if (numberOfPlayers <= 14) {
+            //todo от 11 до 14 игроков
+            roles.add(Role.MAFIA);
+            roles.add(Role.MAFIA);
+            roles.add(Role.MAFIA);
+            roles.add(Role.DON);
+            roles.add(Role.WHORE);
+            roles.add(Role.DOCTOR);
+            roles.add(Role.COP);
+            roles.add(Role.MANIAC);
+
+            for (int i = 0; i < numberOfPlayers - 8; i++) {
+                roles.add(Role.CIVILIAN);
+            }
+
+        } else {
+            final int numberOfMafia = numberOfPlayers / 4;
+
+
+
+            //todo больше 15 игроков
+
+
+
+        }
+
+
+        System.out.println(1);
+        return false;
     }
 
     @Override
@@ -140,7 +201,28 @@ public class PlayerServiceImpl implements PlayerService {
                 .orElseThrow(() -> new NotFoundException(name + " was not found"));
     }
 
+    @Override
+    public boolean isMafiaWasBlockedByWhore(Long id) {
+        List<Player> players = getAllAlivePlayers(id)
+                .stream()
+                .filter(player -> !player.getRole().isCivilian())
+                .toList();
+
+        if (players.size() == 1) {
+            return players.get(0).isBlock();
+        }
+
+        return false;
+    }
+
     private boolean isNotEmpty(Long id) {
         return allPlayers.get(id) != null;
+    }
+
+    private Role getRandomRole(Role... role) {
+
+
+
+        return Arrays.stream(role).toList().get(0);
     }
 }

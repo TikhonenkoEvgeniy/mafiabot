@@ -12,4 +12,6 @@ public interface GameService {
     String getResultGame(Long id);
     boolean checkChoiceOfWhore(Long id, Player player);
     boolean checkChoiceOfDoctor(Long id, Player player);
+    void setMessageId(Long id, Long messageId);
+    Long getMessageId(Long id);
 }

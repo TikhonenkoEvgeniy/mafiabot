@@ -14,18 +14,11 @@ import java.util.*;
 public class GameServiceImpl implements GameService {
     private final PlayerService playerService;
     private Map<Long, List<Game>> gamePlay = new HashMap<>();
+    private Map<Long, Long> messageId = new HashMap<>();
 
     public GameServiceImpl(@Autowired PlayerService playerService) {
         this.playerService = playerService;
     }
-
-    /**
-     *
-     * если мафия выбирает любовницу, а доктор лечит любовницу тогда тот кто был выбран любовницей выживает?
-     *
-     *
-     *
-     */
 
     @Override
     public String getWinner(Long id) {
@@ -156,6 +149,7 @@ public class GameServiceImpl implements GameService {
             if (!mafiaBlocked) {
                 if (game.getChoseMafia().getRole().equals(Role.WHORE)) {
                     deadList.add(game.getChoseWhore());
+                    whoreIsDead = true;
                 }
                 deadList.add(game.getChoseMafia());
             }
@@ -163,10 +157,17 @@ public class GameServiceImpl implements GameService {
 
         /*** Маньяк выбирает */
         if (game.getChoseManiac() != null) {
-
             // маньяк убивает если не выбран любовницей или не выбран мафией
-            if (!game.getChoseWhore().getRole().equals(Role.MANIAC) ||
-                    !game.getChoseMafia().getRole().equals(Role.MANIAC)) {
+            boolean maniacCanKill = true;
+
+            if (game.getChoseWhore().getRole().equals(Role.MANIAC)) {
+                maniacCanKill = false;
+            }
+            if (game.getChoseMafia().getRole().equals(Role.MANIAC) &&
+                    playerService.isMafiaWasBlockedByWhore(id)) {
+                maniacCanKill = false;
+            }
+            if (maniacCanKill) {
                 deadList.add(game.getChoseManiac());
             }
         }
@@ -182,9 +183,9 @@ public class GameServiceImpl implements GameService {
             }
         }
 
-//        if (!whoreIsDead) {
-//            deadList.remove(game.getChoseWhore());
-//        }
+        if (!whoreIsDead) {
+            deadList.remove(game.getChoseWhore());
+        }
 
         /*** Вывод результата */
         if (deadList.isEmpty()) {
@@ -250,5 +251,23 @@ public class GameServiceImpl implements GameService {
             return true;
         }
         return !player.equals(game.getChoseDoctor());
+    }
+
+    @Override
+    public void setMessageId(Long id, Long messageId) {
+        if (this.messageId.containsKey(id)) {
+            this.messageId.replace(id, messageId);
+        }
+        else {
+            this.messageId.put(id, messageId);
+        }
+    }
+
+    @Override
+    public Long getMessageId(Long id) {
+        if (this.messageId.containsKey(id)) {
+            return this.messageId.get(id);
+        }
+        return null;
     }
 }

@@ -17,6 +17,7 @@ public class Menu {
     public final static String REPEAT_GAME = "Повторить игру";
 
     public final static String MANUAL_ROLES = "Назначить роли вручную";
+    public final static String AUTO_ROLES = "Автоматически распределить роли";
 
     public final static String BACK_MENU = "\uD83D\uDC48 Вернуться назад";
     public final static String NEXT_PLAYER = "Ход следующего игрока \uD83D\uDC49";
@@ -38,6 +39,7 @@ public class Menu {
         return ReplyKeyboardMarkup.builder()
                 .resizeKeyboard(false)
                 .keyboard(List.of(new KeyboardRow(List.of(new KeyboardButton(MANUAL_ROLES))),
+                        new KeyboardRow(List.of(new KeyboardButton(AUTO_ROLES))),
                         new KeyboardRow(List.of(new KeyboardButton(CHANGE_TEAM)))))
                 .build();
     }
