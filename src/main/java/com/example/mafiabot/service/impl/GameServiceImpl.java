@@ -172,7 +172,7 @@ public class GameServiceImpl implements GameService {
         }
 
         /*** Доктор выбирает */
-        if (game.getChoseDoctor() != null) {
+        if (game.getChoseDoctor() != null && !game.getChoseWhore().getRole().equals(Role.DOCTOR)) {
             if (game.getChoseDoctor().getRole().equals(Role.WHORE) && !doctorSaveWhoreFromManiac) {
                 deadList.remove(game.getChoseDoctor());
             }
@@ -195,7 +195,8 @@ public class GameServiceImpl implements GameService {
         }
         else {
             StringBuilder badNews = new StringBuilder("Этой ночью были убиты следующие игроки:\n\n");
-            for (Player player : deadList) {
+
+            for (Player player : deadList.stream().distinct().toList()) {
                 player.setAlive(false);
                 badNews.append(player.getName()).append(" (");
                 if (player.getRole().isCivilian()) {
