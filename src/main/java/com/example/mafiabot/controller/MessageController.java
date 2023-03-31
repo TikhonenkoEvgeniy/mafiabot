@@ -29,8 +29,8 @@ public class MessageController {
     private final PlayerService playerService;
     private final GameService gameService;
 
-    //private static final String rootPath = "src/main/java/com/example/mafiabot/images/";
-    private static final String rootPath = "/usr/projects/mafiabot/images/";
+    private static final String rootPath = "src/main/java/com/example/mafiabot/images/";
+//    private static final String rootPath = "/usr/projects/mafiabot/images/";
     private static final File civilian = new File(rootPath + "civilian.png");
     private static final File civilian2 = new File(rootPath + "civilian2.png");
     private static final File cop = new File(rootPath + "cop.png");
@@ -244,34 +244,34 @@ public class MessageController {
         final Long chatId = update.getMessage().getChatId();
         final String chatText = update.getMessage().getText();
         final Player player = playerService.getPlayerByName(chatId, chatText);
-        InputFile inputFile = new InputFile();
+        File file;
 
         if (player.getRole().equals(Role.DON)) {
-            inputFile.setMedia(don);
+            file = don;
         } else if (player.getRole().equals(Role.MAFIA)) {
-            inputFile.setMedia(mafia);
+            file = mafia;
         } else if (player.getRole().equals(Role.MANIAC)) {
-            inputFile.setMedia(maniac);
+            file = maniac;
         } else if (player.getRole().equals(Role.WHORE)) {
-            inputFile.setMedia(whore);
+            file = whore;
         } else if (player.getRole().equals(Role.DOCTOR)) {
-            inputFile.setMedia(doctor);
+            file = doctor;
         } else if (player.getRole().equals(Role.COP)) {
-            inputFile.setMedia(cop);
+            file = cop;
         } else {
             String playerName = player.getName();
             if (Arrays.stream(arrNames).anyMatch(p -> p.equals(playerName.toLowerCase()))) {
-                inputFile.setMedia(civilian);
+                file = civilian;
             }
             else {
-                inputFile.setMedia(civilian2);
+                file = civilian2;
             }
         }
 
         return SendPhoto.builder()
                 .chatId(chatId)
-                .caption("Роля для " + player.getName() + ": " + player.getRole().getName())
-                .photo(inputFile)
+                .caption("Игрок " + player.getName() + ":\n" + player.getRole().getName())
+                .photo(new InputFile(file))
                 .build();
     }
 
@@ -287,7 +287,6 @@ public class MessageController {
                     .text(textAllRolesDone)
                     .replyMarkup(Menu.gameMenu())
                     .build();
-
         }
 
         playerService.setCachePlayer(chatId, player);

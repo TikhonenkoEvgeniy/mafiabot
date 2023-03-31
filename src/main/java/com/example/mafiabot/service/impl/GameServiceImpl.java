@@ -14,7 +14,6 @@ import java.util.*;
 public class GameServiceImpl implements GameService {
     private final PlayerService playerService;
     private Map<Long, List<Game>> gamePlay = new HashMap<>();
-    private Map<Long, Long> messageId = new HashMap<>();
 
     public GameServiceImpl(@Autowired PlayerService playerService) {
         this.playerService = playerService;
@@ -251,23 +250,5 @@ public class GameServiceImpl implements GameService {
             return true;
         }
         return !player.equals(game.getChoseDoctor());
-    }
-
-    @Override
-    public void setMessageId(Long id, Long messageId) {
-        if (this.messageId.containsKey(id)) {
-            this.messageId.replace(id, messageId);
-        }
-        else {
-            this.messageId.put(id, messageId);
-        }
-    }
-
-    @Override
-    public Long getMessageId(Long id) {
-        if (this.messageId.containsKey(id)) {
-            return this.messageId.get(id);
-        }
-        return null;
     }
 }
