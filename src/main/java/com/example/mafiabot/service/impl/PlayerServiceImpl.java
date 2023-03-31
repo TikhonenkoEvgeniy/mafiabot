@@ -18,15 +18,18 @@ public class PlayerServiceImpl implements PlayerService {
 
     @Override
     public boolean setRolesAuto(Long id) {
-        final int numberOfPlayers = allPlayers.get(id).size();
+        List<Player> players = allPlayers.get(id);
+        final int numberOfPlayers = players.size();
         List<Role> roles = new ArrayList<>();
+        int sizeRoles;
 
         if (numberOfPlayers < 6 && numberOfPlayers >=4) {
             roles.add(Role.MAFIA);
             roles.add(Role.WHORE);
             roles.add(Role.DOCTOR);
+            sizeRoles = roles.size();
 
-            for (int i = 0; i < numberOfPlayers - 3; i++) {
+            for (int i = 0; i < numberOfPlayers - sizeRoles; i++) {
                 roles.add(Role.CIVILIAN);
             }
 
@@ -36,26 +39,26 @@ public class PlayerServiceImpl implements PlayerService {
             roles.add(Role.WHORE);
             roles.add(Role.DOCTOR);
             roles.add(Role.COP);
+            sizeRoles = roles.size();
 
-            for (int i = 0; i < numberOfPlayers - 5; i++) {
+            for (int i = 0; i < numberOfPlayers - sizeRoles; i++) {
                 roles.add(Role.CIVILIAN);
             }
             
         } else if (numberOfPlayers <= 10) {
-            //todo от 9 до 10 игроков
             roles.add(Role.MAFIA);
             roles.add(Role.MAFIA);
             roles.add(getRandomRole(Role.DON, Role.MANIAC));
             roles.add(Role.WHORE);
             roles.add(Role.DOCTOR);
             roles.add(Role.COP);
+            sizeRoles = roles.size();
 
-            for (int i = 0; i < numberOfPlayers - 6; i++) {
+            for (int i = 0; i < numberOfPlayers - sizeRoles; i++) {
                 roles.add(Role.CIVILIAN);
             }
             
         } else if (numberOfPlayers <= 14) {
-            //todo от 11 до 14 игроков
             roles.add(Role.MAFIA);
             roles.add(Role.MAFIA);
             roles.add(Role.MAFIA);
@@ -64,25 +67,39 @@ public class PlayerServiceImpl implements PlayerService {
             roles.add(Role.DOCTOR);
             roles.add(Role.COP);
             roles.add(Role.MANIAC);
+            sizeRoles = roles.size();
 
-            for (int i = 0; i < numberOfPlayers - 8; i++) {
+            for (int i = 0; i < numberOfPlayers - sizeRoles; i++) {
                 roles.add(Role.CIVILIAN);
             }
 
         } else {
             final int numberOfMafia = numberOfPlayers / 4;
 
+            for (int i = 0; i < numberOfMafia; i++) {
+                roles.add(Role.MAFIA);
+            }
 
+            roles.add(Role.DON);
+            roles.add(Role.WHORE);
+            roles.add(Role.DOCTOR);
+            roles.add(Role.COP);
+            roles.add(Role.MANIAC);
+            sizeRoles = roles.size();
 
-            //todo больше 15 игроков
-
-
-
+            for (int i = 0; i < numberOfPlayers - sizeRoles; i++) {
+                roles.add(Role.CIVILIAN);
+            }
         }
 
+        Collections.shuffle(roles);
+        boolean isDone = false;
 
-        System.out.println(1);
-        return false;
+        for (int i = 0; i < roles.size(); i++) {
+            allPlayers.get(id).get(i).setRole(roles.get(i));
+            isDone = true;
+        }
+        return isDone;
     }
 
     @Override
@@ -220,9 +237,8 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     private Role getRandomRole(Role... role) {
-
-
-
-        return Arrays.stream(role).toList().get(0);
+        List<Role> roles = Arrays.stream(role).toList();
+        Collections.shuffle(roles);
+        return roles.get(0);
     }
 }

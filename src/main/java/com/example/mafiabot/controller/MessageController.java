@@ -10,15 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
-import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +28,23 @@ import static com.example.mafiabot.util.Menu.*;
 public class MessageController {
     private final PlayerService playerService;
     private final GameService gameService;
+
+    //private static final String rootPath = "src/main/java/com/example/mafiabot/images/";
+    private static final String rootPath = "/usr/projects/mafiabot/images/";
+    private static final File civilian = new File(rootPath + "civilian.png");
+    private static final File civilian2 = new File(rootPath + "civilian2.png");
+    private static final File cop = new File(rootPath + "cop.png");
+    private static final File doctor = new File(rootPath + "doctor.png");
+    private static final File don = new File(rootPath + "don.png");
+    private static final File mafia = new File(rootPath + "mafia.png");
+    private static final File maniac = new File(rootPath + "maniac.png");
+    private static final File whore = new File(rootPath + "whore.png");
+    private static final String[] arrNames = {"аня", "настя", "маша", "лена", "даша", "ира катя", "арина", "полина",
+            "оля", "юля", "таня", "наташа", "вика", "лиза", "ксюша", "милана", "вероника", "ника", "алиса", "лера",
+            "саша", "ульяна", "кристина", "софья", "марина", "света", "варя", "диана", "яна", "кира", "ангелина",
+            "рита", "ева", "алена", "дарина", "карина", "василиса", "олеся", "оксана", "надя", "женя", "веря",
+            "галя", "люда", "валя", "нина", "альбина", "люба", "лариса", "инна", "эльвира", "эля", "наташа",
+            "анжела", "влада", "майя", "тома", "алия", "мадина", "снежана", "жана"};
 
     private static final String textAllRolesDone = "Все роли назначены! ✌️\n\nИгрокам необходимо познакомиться для " +
             "того, чтобы понять, кто из игроков может представлять опасность ночью.\n\nПридумайте тему для " +
@@ -90,6 +105,15 @@ public class MessageController {
         if (playerService.getState(chatId).equals(State.VOTE) ||
                 playerService.getState(chatId).equals(State.WHORE_MOVE)) {
 
+            playerService.setState(chatId, State.GAME);
+            return SendMessage.builder()
+                    .chatId(chatId)
+                    .text(text)
+                    .replyMarkup(Menu.gameMenu())
+                    .build();
+        }
+
+        if (playerService.getState(chatId).equals(State.SHOW_ROLES)) {
             playerService.setState(chatId, State.GAME);
             return SendMessage.builder()
                     .chatId(chatId)
@@ -201,7 +225,10 @@ public class MessageController {
             playerService.setState(chatId, State.SHOW_ROLES);
             return SendMessage.builder()
                     .chatId(chatId)
-                    .text(textAllRolesDone)
+                    .text("Все роли назначены! ✌️\n\n" +
+                            "Все игроки засыпают, ведущий подходит к каждому игроку и показывает ему его роль\n\n" +
+                            "Для того чтобы получить карточку игрока нажмите на его имя на клавиатуре внизу\n" +
+                            "После того, как роли будут всем показаны нажмите на:\n" + BACK_MENU)
                     .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId)))
                     .build();
         }
@@ -216,34 +243,36 @@ public class MessageController {
     private Object showRole(Update update) {
         final Long chatId = update.getMessage().getChatId();
         final String chatText = update.getMessage().getText();
+        final Player player = playerService.getPlayerByName(chatId, chatText);
+        InputFile inputFile = new InputFile();
 
-        if (chatText.equals(BACK_MENU)) {
-           gameService.setMessageId(chatId, null);
-            playerService.setState(chatId, State.GAME);
-            return SendMessage.builder()
-                    .chatId(chatId)
-                    .text(textAllRolesDone)
-                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId)))
-                    .build();
-
+        if (player.getRole().equals(Role.DON)) {
+            inputFile.setMedia(don);
+        } else if (player.getRole().equals(Role.MAFIA)) {
+            inputFile.setMedia(mafia);
+        } else if (player.getRole().equals(Role.MANIAC)) {
+            inputFile.setMedia(maniac);
+        } else if (player.getRole().equals(Role.WHORE)) {
+            inputFile.setMedia(whore);
+        } else if (player.getRole().equals(Role.DOCTOR)) {
+            inputFile.setMedia(doctor);
+        } else if (player.getRole().equals(Role.COP)) {
+            inputFile.setMedia(cop);
+        } else {
+            String playerName = player.getName();
+            if (Arrays.stream(arrNames).anyMatch(p -> p.equals(playerName.toLowerCase()))) {
+                inputFile.setMedia(civilian);
+            }
+            else {
+                inputFile.setMedia(civilian2);
+            }
         }
-        else {
-            final Player player = playerService.getPlayerByName(chatId, chatText);
 
-
-//            return SendPhoto.builder()
-//                    .chatId(chatId)
-//                    .photo(new InputFile("src/main/java/com/example/mafiabot/images/civilian.png"))
-//                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId)))
-//                    .build();
-
-
-            return SendMessage.builder()
-                    .chatId(chatId)
-                    .text(player.getRole().getName())
-                    .replyMarkup(Menu.getPlayers(playerService.getAllAlivePlayers(chatId)))
-                    .build();
-        }
+        return SendPhoto.builder()
+                .chatId(chatId)
+                .caption("Роля для " + player.getName() + ": " + player.getRole().getName())
+                .photo(inputFile)
+                .build();
     }
 
     private Object manualRoles(Update update) {
