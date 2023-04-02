@@ -472,7 +472,7 @@ public class MessageController {
     private Object chooseOfMafia(Update update) {
         final Long chatId = update.getMessage().getChatId();
         final String text = "Мафия сделала свой выбор\n--------------------\n\n" +
-                "Просыпается Дон мафии и пытается вычислить шерифа \uD83D\uDD2E\n\n";
+                "Просыпается Дон мафии и пытается вычислить детектива \uD83D\uDD2E\n\n";
 
         Player player = playerService.getPlayerByName(chatId, update.getMessage().getText());
 
@@ -580,7 +580,7 @@ public class MessageController {
     private Object chooseOfDoctor(Update update) {
         final Message message = update.getMessage();
         final String answer = "\n--------------------\n\n" +
-                "Просыпается шериф и выбирает кого проверить \uD83C\uDFAF\n\n";
+                "Просыпается детектив и выбирает кого проверить \uD83C\uDFAF\n\n";
         playerService.setState(message.getChatId(), State.COP_MOVE);
 
         if (message.getText().equals(NEXT_PLAYER)) {
@@ -613,7 +613,7 @@ public class MessageController {
         else {
             return SendMessage.builder()
                     .chatId(message.getChatId())
-                    .text(answer + "Шерифа в игре нет\nМотай дальше ⬇")
+                    .text(answer + "Детектива в игре нет\nМотай дальше ⬇")
                     .replyMarkup(Menu.getSkipKeyboard())
                     .build();
         }
@@ -637,7 +637,7 @@ public class MessageController {
         if (message.getText().equals(NEXT_PLAYER)) {
             return SendMessage.builder()
                     .chatId(message.getChatId())
-                    .text("Шериф пропустил свой ход" + text)
+                    .text("Детектив пропустил свой ход" + text)
                     .replyMarkup(replyKeyboard)
                     .build();
         }
@@ -651,7 +651,7 @@ public class MessageController {
 
             return SendMessage.builder()
                     .chatId(message.getChatId())
-                    .text("Шериф получил ответ: " + answer + text)
+                    .text("Детектив получил ответ: " + answer + text)
                     .replyMarkup(replyKeyboard)
                     .build();
         }

@@ -112,6 +112,11 @@ public class GameServiceImpl implements GameService {
             return goodNews;
         }
 
+        // любовница блокирует
+        boolean mafiaIsNotBlocked = true;
+        boolean maniacIsNotBlocked = true;
+        boolean doctorIsNotBlocked = true;
+
         List<Game> games = gamePlay.get(id);
         Game game = games.get(games.size() - 1);
         List<Player> deadList = new ArrayList<>();
@@ -123,6 +128,7 @@ public class GameServiceImpl implements GameService {
         if (game.getChoseWhore() != null) {
             // если любовница выбирает ночным клиентом маньяка
             if (game.getChoseWhore().getRole().equals(Role.MANIAC)) {
+                maniacIsNotBlocked = false;
                 // если доктор выбрал любовныцу то она остается в игре и сообщается что доктор ее спас
                 if (game.getChoseDoctor().getRole().equals(Role.WHORE)) {
                     doctorSaveWhoreFromManiac = true;
@@ -133,53 +139,44 @@ public class GameServiceImpl implements GameService {
                     whoreIsDead = true;
                 }
             }
+            if (game.getChoseWhore().getRole().equals(Role.MAFIA)) {
+                long numberOfMafia = playerService.getAllAlivePlayers(id).stream()
+                        .filter(player -> !player.getRole().isCivilian())
+                        .count();
+                if (numberOfMafia <= 1) {
+                    mafiaIsNotBlocked = false;
+                }
+            }
+            if (game.getChoseWhore().getRole().equals(Role.DOCTOR)) {
+                doctorIsNotBlocked = false;
+            }
         }
 
         /*** Мафия выбирает */
-        if (game.getChoseMafia() != null) {
-
-            // если любовница выбирает ночным клиентом мафию и в игре 1 мафия то мафия промахивается
-            boolean mafiaBlocked = (game.getChoseWhore() != null) &&
-                    (!game.getChoseWhore().getRole().isCivilian()) &&
-                    playerService.getAllAlivePlayers(id).stream()
-                            .filter(p -> !p.getRole().isCivilian()).count() == 1;
-
+        if (game.getChoseMafia() != null && mafiaIsNotBlocked) {
             // мафия убивает игрока если не блокирована любовницей
-            if (!mafiaBlocked) {
-                if (game.getChoseMafia().getRole().equals(Role.WHORE)) {
-                    deadList.add(game.getChoseWhore());
-                    whoreIsDead = true;
-                }
-                deadList.add(game.getChoseMafia());
+            // если мафия убивает любовницу, то так же умирает игрок, который был у любовницы
+            if (game.getChoseMafia().getRole().equals(Role.WHORE)) {
+                deadList.add(game.getChoseWhore());
+                whoreIsDead = true;
             }
+            deadList.add(game.getChoseMafia());
         }
 
         /*** Маньяк выбирает */
-        if (game.getChoseManiac() != null) {
+        if (game.getChoseManiac() != null && maniacIsNotBlocked) {
             // маньяк убивает если не выбран любовницей или не выбран мафией
-            boolean maniacCanKill = true;
-
-            if (game.getChoseWhore().getRole().equals(Role.MANIAC)) {
-                maniacCanKill = false;
-            }
-            if (game.getChoseMafia().getRole().equals(Role.MANIAC) &&
-                    playerService.isMafiaWasBlockedByWhore(id)) {
-                maniacCanKill = false;
-            }
-            if (maniacCanKill) {
+            if (!(game.getChoseMafia().getRole().equals(Role.MANIAC) && mafiaIsNotBlocked)) {
                 deadList.add(game.getChoseManiac());
             }
         }
 
         /*** Доктор выбирает */
-        if (game.getChoseDoctor() != null && !game.getChoseWhore().getRole().equals(Role.DOCTOR)) {
+        if (game.getChoseDoctor() != null && doctorIsNotBlocked) {
             if (game.getChoseDoctor().getRole().equals(Role.WHORE) && !doctorSaveWhoreFromManiac) {
                 deadList.remove(game.getChoseDoctor());
             }
-
-            if (!game.getChoseWhore().getRole().equals(Role.DOCTOR)) {
-                deadList.remove(game.getChoseDoctor());
-            }
+            deadList.remove(game.getChoseDoctor());
         }
 
         if (!whoreIsDead) {

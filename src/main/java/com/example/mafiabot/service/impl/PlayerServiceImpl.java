@@ -48,7 +48,7 @@ public class PlayerServiceImpl implements PlayerService {
         } else if (numberOfPlayers <= 10) {
             roles.add(Role.MAFIA);
             roles.add(Role.MAFIA);
-            roles.add(getRandomRole(Role.DON, Role.MANIAC));
+            roles.add(getDonOrManiac());
             roles.add(Role.WHORE);
             roles.add(Role.DOCTOR);
             roles.add(Role.COP);
@@ -236,9 +236,7 @@ public class PlayerServiceImpl implements PlayerService {
         return allPlayers.get(id) != null;
     }
 
-    private Role getRandomRole(Role... role) {
-        List<Role> roles = Arrays.stream(role).toList();
-        Collections.shuffle(roles);
-        return roles.get(0);
+    private Role getDonOrManiac() {
+        return new Random().nextBoolean() ? Role.DON : Role.MANIAC;
     }
 }
