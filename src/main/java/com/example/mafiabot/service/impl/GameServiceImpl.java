@@ -184,7 +184,8 @@ public class GameServiceImpl implements GameService {
         String whoreWasSaved = "";
 
         if (doctorSaveWhoreFromManiac && !deadList.contains(game.getChoseDoctor())) {
-            whoreWasSaved = "\nДоктор спас любовницу от маньяка этой ночью";
+            whoreWasSaved = "\nДоктор спас любовницу от маньяка этой ночью, у игрока " +
+            game.getChoseWhore().getName() + " имунитет";
         }
         if (doctorSaveWhoreFromManiac && deadList.contains(game.getChoseDoctor())) {
             whoreWasSaved = "\nДоктор пытался спасти любовницу от маньяка этой ночью";
