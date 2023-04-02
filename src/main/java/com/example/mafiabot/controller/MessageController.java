@@ -29,8 +29,8 @@ public class MessageController {
     private final PlayerService playerService;
     private final GameService gameService;
 
-    private static final String rootPath = "src/main/java/com/example/mafiabot/images/";
-//    private static final String rootPath = "/usr/projects/mafiabot/images/";
+//    private static final String rootPath = "src/main/java/com/example/mafiabot/images/";
+    private static final String rootPath = "/usr/projects/mafiabot/images/";
     private static final File civilian = new File(rootPath + "civilian.png");
     private static final File civilian2 = new File(rootPath + "civilian2.png");
     private static final File cop = new File(rootPath + "cop.png");

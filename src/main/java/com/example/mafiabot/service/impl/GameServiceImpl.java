@@ -123,9 +123,12 @@ public class GameServiceImpl implements GameService {
         boolean doctorSaveWhoreFromManiac = false;
 
         /*** Любовница выбирает */
-        boolean whoreIsDead = false;
-
         if (game.getChoseWhore() != null) {
+            final Player whore = playerService.getAllAlivePlayers(id).stream()
+                    .filter(player -> player.getRole().equals(Role.WHORE))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Whore was not found"));
+
             // если любовница выбирает ночным клиентом маньяка
             if (game.getChoseWhore().getRole().equals(Role.MANIAC)) {
                 maniacIsNotBlocked = false;
@@ -135,14 +138,14 @@ public class GameServiceImpl implements GameService {
                 }
                 // любовница погибает
                 else {
-                    deadList.add(game.getChoseWhore());
-                    whoreIsDead = true;
+                    deadList.add(whore);
                 }
             }
             if (game.getChoseWhore().getRole().equals(Role.MAFIA)) {
                 long numberOfMafia = playerService.getAllAlivePlayers(id).stream()
                         .filter(player -> !player.getRole().isCivilian())
                         .count();
+
                 if (numberOfMafia <= 1) {
                     mafiaIsNotBlocked = false;
                 }
@@ -158,7 +161,9 @@ public class GameServiceImpl implements GameService {
             // если мафия убивает любовницу, то так же умирает игрок, который был у любовницы
             if (game.getChoseMafia().getRole().equals(Role.WHORE)) {
                 deadList.add(game.getChoseWhore());
-                whoreIsDead = true;
+            }
+            if (game.getChoseMafia().getRole().equals(Role.MANIAC)) {
+                maniacIsNotBlocked = false;
             }
             deadList.add(game.getChoseMafia());
         }
@@ -166,27 +171,29 @@ public class GameServiceImpl implements GameService {
         /*** Маньяк выбирает */
         if (game.getChoseManiac() != null && maniacIsNotBlocked) {
             // маньяк убивает если не выбран любовницей или не выбран мафией
-            if (!(game.getChoseMafia().getRole().equals(Role.MANIAC) && mafiaIsNotBlocked)) {
-                deadList.add(game.getChoseManiac());
-            }
+            deadList.add(game.getChoseManiac());
         }
 
         /*** Доктор выбирает */
         if (game.getChoseDoctor() != null && doctorIsNotBlocked) {
-            if (game.getChoseDoctor().getRole().equals(Role.WHORE) && !doctorSaveWhoreFromManiac) {
+            if (!doctorSaveWhoreFromManiac) {
                 deadList.remove(game.getChoseDoctor());
             }
-            deadList.remove(game.getChoseDoctor());
         }
 
-        if (!whoreIsDead) {
-            deadList.remove(game.getChoseWhore());
+        String whoreWasSaved = "";
+
+        if (doctorSaveWhoreFromManiac && !deadList.contains(game.getChoseDoctor())) {
+            whoreWasSaved = "\nДоктор спас любовницу от маньяка этой ночью";
+        }
+        if (doctorSaveWhoreFromManiac && deadList.contains(game.getChoseDoctor())) {
+            whoreWasSaved = "\nДоктор пытался спасти любовницу от маньяка этой ночью";
         }
 
         /*** Вывод результата */
         if (deadList.isEmpty()) {
             if (doctorSaveWhoreFromManiac) {
-                return goodNews + "\n\nЛюбовница была спасена доктором этой ночью";
+                return goodNews + whoreWasSaved;
             }
             return goodNews;
         }
@@ -205,7 +212,7 @@ public class GameServiceImpl implements GameService {
             }
 
             if (doctorSaveWhoreFromManiac) {
-                badNews.append("\n\nЛюбовница была спасена доктором этой ночью");
+                badNews.append(whoreWasSaved);
             }
 
             return badNews.toString();
