@@ -471,6 +471,7 @@ public class MessageController {
 
     private Object chooseOfMafia(Update update) {
         final Long chatId = update.getMessage().getChatId();
+
         final String text = "Мафия сделала свой выбор\n--------------------\n\n" +
                 "Просыпается Дон мафии и пытается вычислить детектива \uD83D\uDD2E\n\n";
 
@@ -523,7 +524,10 @@ public class MessageController {
 
             final Player player = playerService.getPlayerByName(chatId, chatText);
             boolean isCop = player.getRole().equals(Role.COP);
-            final String answer = isCop ? "\uD83D\uDC4D" : "\uD83D\uDC4E";
+            boolean isBlock = playerService.getAllAlivePlayers(chatId).stream()
+                    .anyMatch(p -> p.isBlock() && p.getRole().equals(Role.DON));
+
+            final String answer = isBlock ? "\uD83D\uDE45\u200D♂️" : isCop ? "\uD83D\uDC4D" : "\uD83D\uDC4E";
 
             if (playerService.checkHasRole(chatId, Role.MANIAC)) {
                 return SendMessage.builder()
@@ -621,10 +625,12 @@ public class MessageController {
 
     private Object chooseOfCop(Update update) {
         final Message message = update.getMessage();
-        final String winnerText = gameService.getWinner(message.getChatId());
+
         String text = "\n--------------------\n\n" +
                 "Просыпается весь город и получает сводку новостей за прошлую ночь:\n\n" +
                 gameService.getResultGame(message.getChatId());
+
+        final String winnerText = gameService.getWinner(message.getChatId());
 
         if (!winnerText.equals("")) {
             text = text + "\n\n" + winnerText;

@@ -50,8 +50,6 @@ public class GameServiceImpl implements GameService {
             return mafiaWin;
         }
 
-        //todo еще поискаьб варианты победителей
-
         return "";
     }
 
@@ -163,7 +161,9 @@ public class GameServiceImpl implements GameService {
                 deadList.add(game.getChoseWhore());
             }
             if (game.getChoseMafia().getRole().equals(Role.MANIAC)) {
-                maniacIsNotBlocked = false;
+                if (game.getChoseDoctor() != null && !game.getChoseDoctor().getRole().equals(Role.MANIAC)) {
+                    maniacIsNotBlocked = false;
+                }
             }
             deadList.add(game.getChoseMafia());
         }
@@ -172,6 +172,9 @@ public class GameServiceImpl implements GameService {
         if (game.getChoseManiac() != null && maniacIsNotBlocked) {
             // маньяк убивает если не выбран любовницей или не выбран мафией
             deadList.add(game.getChoseManiac());
+            if (game.getChoseManiac().getRole().equals(Role.WHORE)) {
+                deadList.add(game.getChoseWhore());
+            }
         }
 
         /*** Доктор выбирает */
@@ -179,6 +182,11 @@ public class GameServiceImpl implements GameService {
             if (!doctorSaveWhoreFromManiac) {
                 deadList.remove(game.getChoseDoctor());
             }
+        }
+
+        /*** Любовница выбирает */
+        if (game.getChoseWhore() != null && deadList.stream().noneMatch(p -> p.getRole().equals(Role.WHORE))) {
+            deadList.remove(game.getChoseWhore());
         }
 
         String whoreWasSaved = "";
