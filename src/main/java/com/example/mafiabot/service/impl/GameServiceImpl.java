@@ -186,7 +186,9 @@ public class GameServiceImpl implements GameService {
 
         /*** Любовница выбирает */
         if (game.getChoseWhore() != null && deadList.stream().noneMatch(p -> p.getRole().equals(Role.WHORE))) {
-            deadList.remove(game.getChoseWhore());
+            if (game.getChoseDoctor() != null && !game.getChoseDoctor().getRole().equals(Role.WHORE)) {
+                deadList.remove(game.getChoseWhore());
+            }
         }
 
         String whoreWasSaved = "";
