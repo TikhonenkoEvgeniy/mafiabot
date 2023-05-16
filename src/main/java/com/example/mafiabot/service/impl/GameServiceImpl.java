@@ -169,7 +169,7 @@ public class GameServiceImpl implements GameService {
         }
 
         /*** Маньяк выбирает */
-        if (game.getChoseManiac() != null && maniacIsNotBlocked) {
+        if (game.getChoseManiac() != null && maniacIsNotBlocked && !game.getChoseMafia().getRole().equals(Role.MANIAC)) {
             // маньяк убивает если не выбран любовницей или не выбран мафией
             deadList.add(game.getChoseManiac());
             if (game.getChoseManiac().getRole().equals(Role.WHORE)) {
